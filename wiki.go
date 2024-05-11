@@ -14,14 +14,14 @@ type Page struct {
 	Body  []byte
 }
 
-var templates = template.Must(template.ParseFiles("edit.html", "view.html"))
-var validPath = regexp.MustCompile("^/(edit|save|view)/([a-zA-Z0-9]+)$")
-
 func (p *Page) save() error {
-	filename := p.Title + ".txt"
-	log.Printf("Writing to file '%v'.\n", filename)
-	return os.WriteFile(filename, p.Body, 0600)
+	filePath := "data\\" + p.Title + ".txt"
+	log.Printf("Writing to file '%v'.\n", filePath)
+	return os.WriteFile(filePath, p.Body, 0600)
 }
+
+var templates = template.Must(template.ParseFiles("templates\\edit.html", "templates\\view.html"))
+var validPath = regexp.MustCompile("^/(edit|save|view)/([a-zA-Z0-9]+)$")
 
 func getTitle(w http.ResponseWriter, r *http.Request) (string, error) {
 	m := validPath.FindStringSubmatch(r.URL.Path)
@@ -33,8 +33,9 @@ func getTitle(w http.ResponseWriter, r *http.Request) (string, error) {
 }
 
 func loadPage(title string) (*Page, error) {
-	filename := title + ".txt"
-	body, err := os.ReadFile(filename)
+	log.Printf("loadPage: %v\n", title)
+	filePath := "data\\" + title + ".txt"
+	body, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, err
 	}
@@ -42,6 +43,7 @@ func loadPage(title string) (*Page, error) {
 }
 
 func renderTemplate(tmpl string, w http.ResponseWriter, p *Page) {
+	log.Printf("renderTemplate: %v\n", tmpl)
 	err := templates.ExecuteTemplate(w, tmpl+".html", p)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
