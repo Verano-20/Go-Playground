@@ -9,6 +9,10 @@ import (
 	"regexp"
 )
 
+type PageList struct {
+	Pages []string
+}
+
 type Page struct {
 	Title string
 	Body  []byte
@@ -20,7 +24,7 @@ func (p *Page) save() error {
 	return os.WriteFile(filePath, p.Body, 0600)
 }
 
-var templates = template.Must(template.ParseFiles("templates\\edit.html", "templates\\view.html"))
+var templates = template.Must(template.ParseFiles("templates\\edit.html", "templates\\home.html", "templates\\view.html"))
 var validPath = regexp.MustCompile("^/(edit|save|view)/([a-zA-Z0-9]+)$")
 
 func getTitle(w http.ResponseWriter, r *http.Request) (string, error) {
@@ -92,7 +96,18 @@ func saveHandler(title string, w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/view/"+title, http.StatusFound)
 }
 
+func homeHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("Handling home request:\n%v\n\n", r)
+	// TODO: Get PageList from existing files in /data
+	pageList := &PageList{Pages: []string{"foo", "bar"}}
+	err := templates.ExecuteTemplate(w, "home.html", pageList)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
 func main() {
+	http.HandleFunc("/", homeHandler)
 	http.HandleFunc("/view/", makeHandler(viewHandler))
 	http.HandleFunc("/edit/", makeHandler(editHandler))
 	http.HandleFunc("/save/", makeHandler(saveHandler))
